@@ -1,0 +1,39 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect Wadaco Nước Sạch account",
+        "description": "Enter the customer code and password for your account on the Wadaco customer-care portal (cskh.wadaco.com.vn). The managing branch code is detected automatically after a successful login.",
+        "data": {
+          "customer_code": "Customer code",
+          "password": "Password",
+          "scan_interval": "Data update interval (hours)"
+        },
+        "data_description": {
+          "scan_interval": "How often to fetch new data from Wadaco (1-48 hours). Default is 12 hours since the water meter is hand-read only once a month (around the 4th-6th)."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to Wadaco server. Please try again.",
+      "invalid_auth": "Invalid branch code, customer code or password.",
+      "unknown": "Unknown error. Please try again."
+    },
+    "abort": {
+      "already_configured": "This customer code is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Update options",
+        "data": {
+          "scan_interval": "Data update interval (hours)"
+        },
+        "data_description": {
+          "scan_interval": "How often to fetch new data from Wadaco (1-48 hours)."
+        }
+      }
+    }
+  }
+}
