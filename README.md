@@ -45,7 +45,7 @@ Vào [cskh.wadaco.com.vn](https://cskh.wadaco.com.vn/gcare-mainlogin/) và đăn
 - **Mã khách hàng** (`customer_code`) — có trên hóa đơn nước hàng tháng.
 - **Mật khẩu** tài khoản đã đăng ký.
 
-> Mã chi nhánh quản lý (`org_code`, vd: `CN0181`) **không cần nhập tay** — integration tự động lấy từ phản hồi của API đăng nhập và lưu lại.
+> Mã chi nhánh quản lý (`org_code`) mặc định là **Wadaco** (`CN0181`) trong form thiết lập — chỉ cần đổi nếu tài khoản của bạn thuộc chi nhánh khác (chọn trong danh sách hoặc tự nhập).
 
 ## Cài đặt
 
@@ -88,6 +88,7 @@ Hoặc thêm thủ công:
 Hoặc tìm thủ công: **Settings > Devices & Services > Add Integration** → tìm `Wadaco Nước Sạch`.
 
 Điền thông tin trong **một bước duy nhất**:
+- **Mã chi nhánh**: mặc định **Wadaco** (`CN0181`) — chọn giá trị khác trong danh sách hoặc tự nhập nếu cần
 - **Mã khách hàng**: mã khách hàng nước (ghi trên hóa đơn)
 - **Mật khẩu**: mật khẩu tài khoản CSKH Wadaco
 - **Chu kỳ cập nhật dữ liệu**: số giờ giữa các lần lấy dữ liệu (1–48, mặc định 12)

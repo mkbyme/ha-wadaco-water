@@ -24,6 +24,11 @@ CONF_ORG_CODE = "org_code"
 CONF_CUSTOMER_CODE = "customer_code"
 CONF_PASSWORD = "password"
 
+DEFAULT_ORG_CODE = "CN0181"
+ORG_CODE_LABELS = {
+    DEFAULT_ORG_CODE: "Wadaco",
+}
+
 CONF_SUCCESS = "success"
 CONF_EMPTY = "empty"
 CONF_ERR_CANNOT_CONNECT = "cannot_connect"

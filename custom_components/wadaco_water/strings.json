@@ -3,6 +3,7 @@
     "step": {
       "user": {
         "data": {
+          "org_code": "Mã chi nhánh",
           "customer_code": "Mã khách hàng",
           "password": "[%key:common::config_flow::data::password%]",
           "scan_interval": "Chu kỳ cập nhật dữ liệu (giờ)"

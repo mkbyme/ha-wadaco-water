@@ -84,19 +84,18 @@ class WadacoAPI:
             else async_get_clientsession(hass)
         )
 
-    async def login(self, customer_code: str, password: str) -> dict[str, Any]:
-        """Validate the account credentials and return the org code from the response.
+    async def login(self, org_code: str, customer_code: str, password: str) -> dict[str, Any]:
+        """Validate the account credentials.
 
-        The login endpoint only needs the customer code and password; the
-        managing branch (`orgCode`) is not something the user has to supply -
-        it comes back in the login response and must be saved for later use
-        as the `orgCode` query param on `get_year_invoices`.
+        The login endpoint expects a single `userName` combining the branch
+        code the user picks up front with their customer code, as
+        `<org_code>_<customer_code>` - not the bare customer code.
         """
         try:
             resp = await self._session.post(
                 url=URL_LOGIN,
                 json={
-                    "userName": customer_code,
+                    "userName": f"{org_code}_{customer_code}",
                     "password": password,
                 },
                 headers=_BASE_HEADERS,
@@ -110,11 +109,10 @@ class WadacoAPI:
             return {"status": status}
 
         result = resp_json.get("result") or {}
-        org_code = result.get("orgCode")
-        if not result.get("access_token") or not org_code:
+        if not result.get("access_token"):
             return {"status": CONF_ERR_INVALID_AUTH}
 
-        return {"status": CONF_SUCCESS, "org_code": org_code}
+        return {"status": CONF_SUCCESS}
 
     async def get_year_invoices(
         self, org_code: str, customer_code: str, year: int, limit: int = 12

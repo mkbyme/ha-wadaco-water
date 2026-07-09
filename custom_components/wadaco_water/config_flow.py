@@ -10,6 +10,7 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
+from homeassistant.helpers import selector
 
 from . import wadaco_water
 from .const import (
@@ -19,14 +20,28 @@ from .const import (
     CONF_PASSWORD,
     CONF_SCAN_INTERVAL,
     CONF_SUCCESS,
+    DEFAULT_ORG_CODE,
     DEFAULT_SCAN_INTERVAL_HOURS,
     DOMAIN,
+    ORG_CODE_LABELS,
 )
 
 _LOGGER = logging.getLogger(__name__)
 
+_ORG_CODE_SELECTOR = selector.SelectSelector(
+    selector.SelectSelectorConfig(
+        options=[
+            selector.SelectOptionDict(value=code, label=label)
+            for code, label in ORG_CODE_LABELS.items()
+        ],
+        mode=selector.SelectSelectorMode.DROPDOWN,
+        custom_value=True,
+    )
+)
+
 _SETUP_SCHEMA = vol.Schema(
     {
+        vol.Required(CONF_ORG_CODE, default=DEFAULT_ORG_CODE): _ORG_CODE_SELECTOR,
         vol.Required(CONF_CUSTOMER_CODE): str,
         vol.Required(CONF_PASSWORD): str,
         vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL_HOURS): vol.All(
@@ -52,14 +67,16 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
-        """Single setup step: customer code + password + scan interval.
+        """Single setup step: org code + customer code + password + scan interval.
 
-        The branch code (org_code) is not asked here - it comes back in the
-        login response and is saved from there.
+        The branch code (org_code) is picked from a dropdown (custom values
+        allowed) instead of being derived from the login response - the
+        login username sent to the API is `<org_code>_<customer_code>`.
         """
         self._errors = {}
 
         if user_input is not None:
+            org_code = user_input[CONF_ORG_CODE].strip()
             customer_code = user_input[CONF_CUSTOMER_CODE].strip()
             password = user_input[CONF_PASSWORD]
             scan_interval = user_input[CONF_SCAN_INTERVAL]
@@ -67,7 +84,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             api = wadaco_water.WadacoAPI(self.hass, True)
 
             try:
-                login_result = await api.login(customer_code, password)
+                login_result = await api.login(org_code, customer_code, password)
             except Exception as e:
                 _LOGGER.exception("Unexpected login error: %s", e)
                 login_result = {"status": CONF_ERR_UNKNOWN}
@@ -76,7 +93,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             if status != CONF_SUCCESS:
                 self._errors["base"] = status
             else:
-                org_code = login_result["org_code"]
                 unique_id = f"{org_code}_{customer_code}"
                 await self.async_set_unique_id(unique_id)
                 self._abort_if_unique_id_configured()

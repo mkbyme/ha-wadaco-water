@@ -3,13 +3,15 @@
     "step": {
       "user": {
         "title": "Kết nối tài khoản Wadaco Nước Sạch",
-        "description": "Nhập mã khách hàng và mật khẩu tài khoản trên cổng chăm sóc khách hàng Wadaco (cskh.wadaco.com.vn). Mã chi nhánh quản lý sẽ được tự động xác định sau khi đăng nhập thành công.",
+        "description": "Chọn mã chi nhánh quản lý và nhập mã khách hàng, mật khẩu tài khoản trên cổng chăm sóc khách hàng Wadaco (cskh.wadaco.com.vn).",
         "data": {
+          "org_code": "Mã chi nhánh",
           "customer_code": "Mã khách hàng",
           "password": "Mật khẩu",
           "scan_interval": "Chu kỳ cập nhật dữ liệu (giờ)"
         },
         "data_description": {
+          "org_code": "Mã chi nhánh quản lý tài khoản (mặc định Wadaco - CN0181). Chọn giá trị khác trong danh sách hoặc tự nhập nếu chi nhánh của bạn không có sẵn.",
           "scan_interval": "Tần suất lấy dữ liệu mới từ Wadaco (1–48 giờ). Mặc định 12 giờ vì chỉ số nước được ghi tay mỗi tháng một lần (khoảng ngày 4-6)."
         }
       }
