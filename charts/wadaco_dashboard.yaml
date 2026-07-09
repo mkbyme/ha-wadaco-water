@@ -1,0 +1,165 @@
+######################################
+# Dashboard đồng hồ nước wadaco thay thế giá trị CUSTOMER_CODE bằng mã khách hàng của bạn ví dụ: 000065191
+# Yêu cầu cài apexcharts-cards https://github.com/romrider/apexcharts-card
+######################################
+square: false
+type: grid
+cards:
+  - type: markdown
+    title: HÓA ĐƠN TIỀN NƯỚC
+    content: >
+      <div style="padding: 10px; border: 1px dashed #777; border-radius: 8px;
+      background-color: var(--card-background-color);">
+       
+       <div style="text-align: center;">
+         <h3 style="margin: 0; uppercase; color: var(--primary-text-color);">WADACO NƯỚC SẠCH</h3>
+         <div style="font-size: 13px; color: var(--secondary-text-color);">Mã khách hàng: <b>CUSTOMER_CODE</b> | ĐH: {{ state_attr('sensor.CUSTOMER_CODE_meter_index', 'meter_no') }}</div>
+         <hr style="border: 0; border-top: 1px dashed #777; margin: 10px 0;">
+       </div>
+
+       {# --- BÓC TÁCH DỮ LIỆU LỊCH SỬ CHU KỲ --- #}
+       {% set history = state_attr('sensor.CUSTOMER_CODE_meter_index', 'history') %}
+       {% if history is not none and history | length >= 2 %}
+         {% set current = history[0] %}   {# Tháng này #}
+         {% set previous = history[1] %}  {# Tháng trước #}
+       {% elif history is not none and history | length == 1 %}
+         {% set current = history[0] %}
+         {% set previous = none %}
+       {% else %}
+         {% set current, previous = none, none %}
+       {% endif %}
+
+       {% if current is not none %}
+       <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+         
+         <tr>
+           <td colspan="2" style="padding: 4px 0;"><b>Kỳ hóa đơn:</b> Tháng {{ current.period }}</td>
+           <td colspan="2" style="text-align: right; padding: 4px 0;"><b>Ngày ghi số:</b> {{ current.read_date }}</td>
+         </tr>
+         <tr>
+           <td colspan="2" style="padding: 4px 0;"><b>Từ ngày:</b> {{ current.from_date }}</td>
+           <td colspan="2" style="text-align: right; padding: 4px 0;"><b>Đến ngày:</b> {{ current.to_date }}</td>
+         </tr>
+         <tr style="border-bottom: 1px solid var(--divider-color);">
+           <td colspan="2" style="padding: 4px 0 10px 0;"><b>Trạng thái:</b> 
+             <span style="color: {% if current.paid %} #4CAF50 {% else %} #FF9800 {% endif %}; font-weight: bold;">
+               {{ 'Đã thanh toán' if current.paid else 'Chưa thanh toán' }}
+             </span>
+           </td>
+           <td colspan="2" style="text-align: right; padding: 4px 0 10px 0; font-size: 11px; color: var(--secondary-text-color);">
+             <i>Ngày phát hành: {{ current.invoice_date }}</i>
+           </td>
+         </tr>
+
+         <tr style="font-weight: bold; background-color: rgba(255,255,255,0.05); border-bottom: 1px solid var(--divider-color);">
+           <th style="text-align: left; padding: 6px 4px;">Hạng mục chu kỳ</th>
+           <th style="text-align: right; padding: 6px 4px; width: 22%;">Số Cũ</th>
+           <th style="text-align: right; padding: 6px 4px; width: 22%;">Số Mới</th>
+           <th style="text-align: right; padding: 6px 4px; width: 25%;">Sản lượng</th>
+         </tr>
+
+         <tr style="border-bottom: 1px dashed var(--divider-color);">
+           <td style="padding: 8px 4px;"><b>Tháng này (Kỳ {{ current.period }})</b></td>
+           <td style="text-align: right;">{{ current.old_index }}</td>
+           <td style="text-align: right;">{{ current.new_index }}</td>
+           <td style="text-align: right; color: var(--primary-color); font-weight: bold;">{{ current.consumption_m3 }} m³</td>
+         </tr>
+         
+         <tr style="border-bottom: 1px solid var(--divider-color); color: var(--secondary-text-color);">
+           <td style="padding: 8px 4px;">• Tháng trước (Kỳ {{ previous.period if previous else '-' }})</td>
+           <td style="text-align: right;">{{ previous.old_index if previous else '-' }}</td>
+           <td style="text-align: right;">{{ previous.new_index if previous else '-' }}</td>
+           <td style="text-align: right;">{{ previous.consumption_m3 if previous else '-' }} m³</td>
+         </tr>
+
+         <tr style="font-weight: bold; background-color: rgba(255,255,255,0.02);">
+           <td colspan="2" style="padding: 10px 4px 4px 4px;">Chi tiết chi phí tháng này:</td>
+           <td colspan="2" style="text-align: right; padding: 10px 4px 4px 4px;">Số tiền</td>
+         </tr>
+         <tr>
+           <td colspan="2" style="padding: 4px 4px; color: var(--secondary-text-color);">+ Tiền nước chưa thuế:</td>
+           <td colspan="2" style="text-align: right; padding: 4px 4px;">{{ "{:,.0f}".format(current.amount_before_fees | float(0)) }} đ</td>
+         </tr>
+         <tr>
+           <td colspan="2" style="padding: 4px 4px; color: var(--secondary-text-color);">+ Thuế GTGT ({{ current.vat_rate }}%):</td>
+           <td colspan="2" style="text-align: right; padding: 4px 4px;">{{ "{:,.0f}".format(current.vat | float(0)) }} đ</td>
+         </tr>
+         <tr>
+           <td colspan="2" style="padding: 4px 4px; color: var(--secondary-text-color);">+ Phí bảo vệ môi trường ({{ current.environment_fee_rate }}%):</td>
+           <td colspan="2" style="text-align: right; padding: 4px 4px;">{{ "{:,.0f}".format(current.environment_fee | float(0)) }} đ</td>
+         </tr>
+         <tr style="border-bottom: 1px dashed var(--divider-color);">
+           <td colspan="2" style="padding: 4px 4px; color: var(--secondary-text-color);">+ Phí dịch vụ thoát nước:</td>
+           <td colspan="2" style="text-align: right; padding: 4px 4px; padding-bottom: 8px;">{{ "{:,.0f}".format(current.wastewater_fee | float(0)) }} đ</td>
+         </tr>
+
+         <tr>
+           <td colspan="2" style="padding: 8px 4px 4px 4px; color: var(--secondary-text-color);">Tiền nước tháng trước:</td>
+           <td colspan="2" style="text-align: right; padding: 8px 4px 4px 4px; font-style: italic;">{{ "{:,.0f}".format(previous.total_amount | float(0)) if previous else '-' }} VNĐ</td>
+         </tr>
+         
+         <tr style="border-top: 1px solid #f44336; background-color: rgba(244, 67, 54, 0.05);">
+           <td colspan="2" style="padding: 10px 4px; font-size: 14px; font-weight: bold; color: #f44336;">TỔNG TIỀN THANH TOÁN:</td>
+           <td colspan="2" style="text-align: right; padding: 10px 4px; font-size: 15px; font-weight: bold; color: #f44336;">
+             {{ "{:,.0f}".format(current.total_amount | float(0)) }} VNĐ
+           </td>
+         </tr>
+       </table>
+       {% else %}
+         <p style="text-align: center; color: var(--secondary-text-color);">Không tìm thấy dữ liệu lịch sử hóa đơn nước.</p>
+       {% endif %}
+      </div>
+  - type: custom:apexcharts-card
+    graph_span: 12month
+    header:
+      show: true
+      title: Khối lượng nước tiêu thụ theo tháng
+      show_states: true
+    series:
+      - entity: sensor.CUSTOMER_CODE_meter_index
+        name: Khối lượng nước
+        unit: " m³"
+        type: column
+        color: var(--primary-color)
+        data_generator: |
+
+          const history = entity.attributes.history || [];
+          const sortedHistory = [...history].reverse();
+
+          return sortedHistory.map((item) => {
+            // Thay đổi sang sử dụng trường read_date thay vì from_date
+            const parts = item.read_date.split('/');
+            const formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+            return [new Date(formattedDate).getTime(), item.consumption_m3];
+          });
+    apex_config:
+      xaxis:
+        labels:
+          format: MM/yyyy
+  - type: custom:apexcharts-card
+    graph_span: 12month
+    header:
+      show: true
+      title: Số tiền hóa đơn nước theo tháng
+      show_states: true
+    series:
+      - entity: sensor.CUSTOMER_CODE_meter_index
+        name: Tổng tiền nước
+        type: column
+        unit: " VNĐ"
+        color: var(--primary-color)
+        data_generator: |
+          const history = entity.attributes.history || [];
+          const sortedHistory = [...history].reverse();
+
+          return sortedHistory.map((item) => {
+            // Thay đổi sang sử dụng trường read_date
+            const parts = item.read_date.split('/');
+            const formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+            return [new Date(formattedDate).getTime(), item.total_amount];
+          });
+    apex_config:
+      xaxis:
+        labels:
+          format: MM/yyyy
+columns: 1

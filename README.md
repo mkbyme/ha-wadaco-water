@@ -37,6 +37,24 @@ Entity ID có dạng `sensor.{ma_khach_hang}_{key}` (viết thường).
 
 **`bill_amount`**: `period`, `invoice_no`, `invoice_series` (số ký hiệu hóa đơn), `meter_no`, `old_index`, `new_index`, `consumption_m3`, `from_date`, `to_date`, `read_date`, `invoice_date` (ngày lập hóa đơn), `detail_items` (chi tiết đơn giá theo từng bậc: `name`, `quantity`, `unit_price`, `amount`), `amount_before_fees` (tiền nước trước phí), `vat_rate`, `vat`, `environment_fee_rate`, `environment_fee` (phí bảo vệ môi trường), `wastewater_fee` (phí thoát nước), `total_amount`, `total_amount_words` (số tiền bằng chữ), `paid`, và `history` (toàn bộ hóa đơn trong năm hiện tại, mỗi phần tử có đầy đủ các trường trên) — đủ thông tin cơ bản để render lại một hóa đơn.
 
+### Dashboard mẫu (charts)
+
+Thư mục [`charts/`](charts/) chứa một mẫu dashboard dạng YAML (`wadaco_dashboard.yaml`) hiển thị hóa đơn và biểu đồ tiêu thụ nước theo tháng, dựa trên attribute `history` của sensor `meter_index`.
+
+**Yêu cầu:** cài thêm [apexcharts-card](https://github.com/RomRider/apexcharts-card) qua HACS (Frontend) trước khi dùng.
+
+**Cách dùng:**
+1. Mở dashboard cần thêm → **Chỉnh sửa** → **⋮** → **Chỉnh sửa bằng YAML**.
+2. Dán nội dung file [`charts/wadaco_dashboard.yaml`](charts/wadaco_dashboard.yaml) vào.
+3. Thay tất cả `CUSTOMER_CODE` bằng mã khách hàng của bạn (ví dụ `000065191` — trùng với phần `{ma_khach_hang}` trong entity ID, xem [Sensors được tạo](#sensors-được-tạo)).
+4. Lưu lại.
+
+Kết quả gồm 2 khối:
+
+| Thẻ hóa đơn chi tiết | Biểu đồ tiêu thụ & tiền nước theo tháng |
+|---|---|
+| ![Thẻ hóa đơn tiền nước](charts/bill.png) | ![Biểu đồ khối lượng nước và tiền nước theo tháng](charts/timeline.png) |
+
 ## Yêu cầu trước khi cài đặt
 
 ### Tài khoản trên cổng CSKH Wadaco
