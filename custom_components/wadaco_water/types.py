@@ -39,7 +39,6 @@ WADACO_SENSORS: tuple[WadacoSensorEntityDescription, ...] = (
         native_unit_of_measurement=UnitOfVolume.CUBIC_METERS,
         device_class=SensorDeviceClass.WATER,
         value_fn=lambda data: data[ID_CONSUMPTION],
-        history_key=ID_BILL_HISTORY,
     ),
     WadacoSensorEntityDescription(
         key=ID_METER_INDEX,
@@ -58,7 +57,6 @@ WADACO_SENSORS: tuple[WadacoSensorEntityDescription, ...] = (
         native_unit_of_measurement="VNĐ",
         value_fn=lambda data: data[ID_BILL_AMOUNT],
         dynamic_icon=True,
-        history_key=ID_BILL_HISTORY,
     ),
     WadacoSensorEntityDescription(
         key=ID_PAYMENT_STATUS,

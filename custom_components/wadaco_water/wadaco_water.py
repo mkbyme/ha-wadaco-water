@@ -1,15 +1,16 @@
 """Wadaco Nước Sạch API client.
 
-The customer-care portal (cskh.wadaco.com.vn) only uses its
-`Mobile/LoginByUserCode` call to validate a customer's password; the actual
-consumption/invoice data behind `InVoices/findInVoicesByTime` requires no
-auth token at all (confirmed from captured traffic), so there is no session
-or token-refresh logic to maintain here — each update just re-queries the
-invoice list directly.
+`Mobile/LoginByUserCode` validates a customer's password and hands back a
+short-lived service token (`result.token.service`); the consumption/invoice
+data behind `InVoices/findInVoicesByTime` requires that token, Basic-auth
+encoded as `<org_code>_<customer_code>:<service_token>`. There is no
+separate refresh flow - `request_update` just logs in fresh every cycle to
+get a token before querying invoices.
 """
 
 from __future__ import annotations
 
+import base64
 from datetime import datetime
 import logging
 import re
@@ -73,6 +74,12 @@ def _format_date(value: str | None) -> str:
     return parsed.strftime("%d/%m/%Y") if parsed else ""
 
 
+def _basic_auth_header(org_code: str, customer_code: str, service_token: str) -> str:
+    """Build a `Basic <base64>` header from `<org_code>_<customer_code>:<service_token>`."""
+    raw = f"{org_code}_{customer_code}:{service_token}"
+    return "Basic " + base64.b64encode(raw.encode()).decode()
+
+
 class WadacoAPI:
     """Client for the Wadaco customer-care API (myservice.citywork.vn)."""
 
@@ -85,11 +92,13 @@ class WadacoAPI:
         )
 
     async def login(self, org_code: str, customer_code: str, password: str) -> dict[str, Any]:
-        """Validate the account credentials.
+        """Validate the account credentials and return the service token.
 
         The login endpoint expects a single `userName` combining the branch
         code the user picks up front with their customer code, as
-        `<org_code>_<customer_code>` - not the bare customer code.
+        `<org_code>_<customer_code>` - not the bare customer code. The
+        response's `result.token.service` value (not `access_token`) is what
+        later gets Basic-auth-encoded for `get_year_invoices`.
         """
         try:
             resp = await self._session.post(
@@ -109,15 +118,30 @@ class WadacoAPI:
             return {"status": status}
 
         result = resp_json.get("result") or {}
-        if not result.get("access_token"):
+        service_token = (result.get("token") or {}).get("service")
+        if not service_token:
             return {"status": CONF_ERR_INVALID_AUTH}
 
-        return {"status": CONF_SUCCESS}
+        return {"status": CONF_SUCCESS, "service_token": service_token}
 
     async def get_year_invoices(
-        self, org_code: str, customer_code: str, year: int, limit: int = 12
+        self,
+        org_code: str,
+        customer_code: str,
+        service_token: str,
+        year: int,
+        limit: int = 12,
     ) -> dict:
-        """Fetch the current year's invoices/meter readings."""
+        """Fetch the current year's invoices/meter readings.
+
+        Requires a Basic-auth header built from `<org_code>_<customer_code>`
+        as the username and the `service_token` from `login()` as the
+        password - the endpoint is not open/unauthenticated.
+        """
+        headers = {
+            **_BASE_HEADERS,
+            "Authorization": _basic_auth_header(org_code, customer_code, service_token),
+        }
         try:
             resp = await self._session.get(
                 url=URL_INVOICES,
@@ -127,7 +151,7 @@ class WadacoAPI:
                     "orgCode": org_code,
                     "nam": year,
                 },
-                headers=_BASE_HEADERS,
+                headers=headers,
             )
         except Exception as e:
             _LOGGER.error("Get invoices error: %s", e)
@@ -141,9 +165,17 @@ class WadacoAPI:
         invoices.sort(key=lambda b: (b.get("nam", 0), b.get("thang", 0)), reverse=True)
         return {"status": CONF_SUCCESS, "data": invoices}
 
-    async def request_update(self, org_code: str, customer_code: str) -> dict[str, Any]:
-        """Fetch this year's invoices and build the sensor data dict."""
-        invoices = await self.get_year_invoices(org_code, customer_code, datetime.now().year)
+    async def request_update(
+        self, org_code: str, customer_code: str, password: str
+    ) -> dict[str, Any]:
+        """Log in for a fresh service token, then fetch this year's invoices."""
+        login_result = await self.login(org_code, customer_code, password)
+        if login_result["status"] != CONF_SUCCESS:
+            return {"status": login_result["status"]}
+
+        invoices = await self.get_year_invoices(
+            org_code, customer_code, login_result["service_token"], datetime.now().year
+        )
         if invoices["status"] != CONF_SUCCESS:
             return {"status": invoices["status"]}
 

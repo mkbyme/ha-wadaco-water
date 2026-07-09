@@ -21,6 +21,7 @@ from .const import (
     CONF_DEVICE_NAME,
     CONF_DEVICE_SW_VERSION,
     CONF_ORG_CODE,
+    CONF_PASSWORD,
     CONF_SCAN_INTERVAL,
     CONF_SUCCESS,
     DEFAULT_SCAN_INTERVAL_HOURS,
@@ -56,13 +57,16 @@ class WadacoDevice:
         self.hass = api.hass
         self._org_code = dataset[CONF_ORG_CODE]
         self._customer_code = dataset[CONF_CUSTOMER_CODE]
+        self._password = dataset[CONF_PASSWORD]
         self._api = api
         self._data = {"status": "unknown"}
         scan_hours = dataset.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL_HOURS)
         self._scan_interval = timedelta(hours=scan_hours)
 
     async def _async_update(self):
-        self._data = await self._api.request_update(self._org_code, self._customer_code)
+        self._data = await self._api.request_update(
+            self._org_code, self._customer_code, self._password
+        )
 
         status = self._data.get("status")
         if status == CONF_SUCCESS:
